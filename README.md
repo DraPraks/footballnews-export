@@ -28,9 +28,6 @@ This is a small Django app for the assignment. One project (`football_news`), on
 8. Deployment: added my PWS domain to `ALLOWED_HOSTS`. For production I switch DB to PostgreSQL using env vars; locally it’s SQLite. Pushed and set env vars on PWS.
 
 ## MVT in 3 lines
-Browser -> `urls.py` -> `views.py` -> (queries) `models.py` -> database
-			 <- render `main.html` with context and send HTML back
-
 In words:
 - `urls.py` picks the view based on the path.
 - `views.py` gathers data and calls `render` with a context.
@@ -57,4 +54,5 @@ It was fine. Maybe show a minimal admin customization (`list_display`) and a sho
 
 ## Notes
 - Local dev: DEBUG on, SQLite. Prod: set env vars and use Postgres; domain is already in `ALLOWED_HOSTS`.
-- The extra `News` model is unrelated to the assignment; I left it in for testing.
+- The extra `News` model is unrelated to the assignment; I left it in for testing (or maybe I removed it can't remember).
+- Gen AI (Grok) was used to assist in this assignment.
