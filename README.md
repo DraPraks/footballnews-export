@@ -4,9 +4,9 @@ Class: PBP KKI
 
 ---
 
-# Football Pro Shop
+# Football Shop
 
-Live (PWS): https://muhammad-adra41-footballnews.pbp.cs.ui.ac.id/
+Live (PWS): https://muhammad-adra41-footballshop.pbp.cs.ui.ac.id/
 
 This is a small Django app for the assignment. One project (`football_news`), one app (`main`), one `Product` model, a view that renders some personal info and product data, and a simple template. Deployed to PWS.
 
@@ -25,17 +25,16 @@ This is a small Django app for the assignment. One project (`football_news`), on
 5. `makemigrations` and `migrate` so the table exists.
 6. Basic view `show_main` returns `app_name`, my name/class, and a queryset of products to the template.
 7. Template `main.html` prints the info and loops products.
-8. Deployment: added my PWS domain to `ALLOWED_HOSTS`. For production I switch DB to PostgreSQL using env vars; locally it’s SQLite. Pushed and set env vars on PWS.
+8. Deployment: added my PWS domain to `ALLOWED_HOSTS`.
 
 ## MVT in 3 lines
-In words:
 - `urls.py` picks the view based on the path.
 - `views.py` gathers data and calls `render` with a context.
 - `models.py` defines `Product` and lets me query without writing raw SQL.
 - `main.html` uses the context to produce the final HTML.
 
-## What `settings.py` does (the stuff that makes Django work)
-Project configuration lives here: installed apps, middleware, database settings, templates, static files, allowed hosts, debug flag, and so on. In this repo I read an env flag to choose SQLite locally and PostgreSQL on PWS, and I listed the PWS domain in `ALLOWED_HOSTS` so it actually serves.
+## What `settings.py` does 
+Project configuration lives here: installed apps, middleware, database settings, templates, static files, allowed hosts, debug flag, and so on. In this repo the database is always SQLite (local and PWS), and I listed the PWS domain in `ALLOWED_HOSTS` so it actually serves.
 
 ## How migrations work (quick)
 1. Change models.
@@ -44,15 +43,14 @@ Project configuration lives here: installed apps, middleware, database settings,
 That’s it. If you edit models again, repeat.
 
 ## Why Django for an intro course (my take)
-- Comes with a lot of built-ins (admin, auth, ORM) so you can focus on concepts, not plumbing.
+- Comes with a lot of built-ins (admin, auth, ORM) so you can focus on concepts.
 - Clear structure; easier to grade and to collaborate.
 - Good docs and a stable ecosystem.
 - Reasonably secure defaults (CSRF, etc.).
 
 ## Feedback for Tutorial 1
-It was fine. Maybe show a minimal admin customization (`list_display`) and a short note on using environment variables earlier.
+It was fine.
 
 ## Notes
-- Local dev: DEBUG on, SQLite. Prod: set env vars and use Postgres; domain is already in `ALLOWED_HOSTS`.
-- The extra `News` model is unrelated to the assignment; I left it in for testing (or maybe I removed it can't remember).
-- Gen AI (Grok) was used to assist in this assignment.
+- Local dev: DEBUG on, SQLite. Prod: still SQLite; domain is already in `ALLOWED_HOSTS`.
+- The extra `News` model is unrelated to the assignment; I left it in for testing.
