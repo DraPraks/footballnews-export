@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>{{ app_name }}</title>
+	<style>
+		body { font-family: Arial, sans-serif; margin: 2rem; background: #f5f7fa; }
+		header { border-bottom: 2px solid #222; margin-bottom: 1.5rem; }
+		h1 { margin: 0 0 .25rem; }
+		.meta span { display: inline-block; margin-right: 1rem; font-size: 0.9rem; color: #555; }
+		.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 1rem; }
+		.card { background:#fff; border:1px solid #ddd; border-radius:8px; padding: .75rem .75rem 1rem; display:flex; flex-direction:column; }
+		.card img { width:100%; height:140px; object-fit:cover; border-radius:6px; margin-bottom:.5rem; }
+		.badge { font-size: .65rem; text-transform:uppercase; letter-spacing:.5px; background:#0a4; color:#fff; padding:2px 6px; border-radius:4px; }
+		.price { font-weight: bold; color:#0a3d62; }
+		footer { margin-top:2rem; font-size:.8rem; color:#666; }
+		.featured { outline:2px solid #f39c12; }
+	</style>
+</head>
+<body>
+	<header>
+		<h1>{{ app_name }}</h1>
+		<div class="meta">
+			<span><strong>NPM:</strong> {{ npm }}</span>
+			<span><strong>Name:</strong> {{ name }}</span>
+			<span><strong>Class:</strong> {{ class }}</span>
+			<span><strong>Total Products:</strong> {{ product_count }}</span>
+		</div>
+	</header>
+
+	<section style="background:#fff;border:1px solid #ddd;border-radius:8px;padding:1rem;margin-bottom:1.25rem;">
+		<h2 style="margin-top:0; font-size:1.1rem;">Add a new product</h2>
+		<form method="post" style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;align-items:start;">
+			{% csrf_token %}
+			<div style="grid-column: span 1;">
+				<label>Name<br>{{ form.name }}</label>
+			</div>
+			<div>
+				<label>Price<br>{{ form.price }}</label>
+			</div>
+			<div style="grid-column: span 2;">
+				<label>Description<br>{{ form.description }}</label>
+			</div>
+			<div>
+				<label>Thumbnail URL<br>{{ form.thumbnail }}</label>
+			</div>
+			<div>
+				<label>Category<br>{{ form.category }}</label>
+			</div>
+			<div>
+				<label>Featured?<br>{{ form.is_featured }}</label>
+			</div>
+			<div style="grid-column: span 2;">
+				<button type="submit" style="background:#0a4;color:#fff;border:none;padding:.5rem .9rem;border-radius:6px;cursor:pointer;">Add Product</button>
+			</div>
+		</form>
+	</section>
+
+	{% if products %}
+	<section class="grid">
+		{% for p in products %}
+		<div class="card {% if p.is_featured %}featured{% endif %}">
+			<img src="{{ p.thumbnail }}" alt="{{ p.name }} thumbnail" onerror="this.src='https://via.placeholder.com/300x140?text=No+Image';">
+			<div style="display:flex;justify-content:space-between;align-items:center;">
+				<h3 style="margin:.25rem 0; font-size:1.05rem;">{{ p.name }}</h3>
+				{% if p.is_featured %}<span class="badge">Featured</span>{% endif %}
+			</div>
+			<p class="price">IDR {{ p.price }}</p>
+			<p style="flex-grow:1; font-size:.85rem; line-height:1.2rem;">{{ p.description|truncatechars:120 }}</p>
+			<p style="margin:0; font-size:.7rem; color:#777;">Category: {{ p.get_category_display }}</p>
+		</div>
+		{% endfor %}
+	</section>
+	{% else %}
+		<p>No products yet. Add some using the form above.</p>
+	{% endif %}
+
+	<footer>
+		<p>Football Pro Shop - Simple Django MVT demo.</p>
+	</footer>
+</body>
+</html>
