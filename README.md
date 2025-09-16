@@ -54,3 +54,38 @@ It was fine.
 ## Notes
 - Local dev: DEBUG on, SQLite. Prod: still SQLite; domain is already in `ALLOWED_HOSTS`.
 - The extra `News` model is unrelated to the assignment; I left it in for testing.
+
+---
+
+## Assignment Checklist
+
+- DONE: 4 new view functions for data formats
+- DONE: URL routes for each view
+- DONE: Product list page with Add button and per-item Detail button
+	- List: `/` (shows all products)
+	- Add: `/add/`
+	- Detail: `/product/<id>/`
+- DONE: Form page to add product objects
+- DONE: Detail page for each product
+- DONE: Postman screenshots added: embedded below
+
+### Postman Endpoints to Capture
+
+Use these four GET endpoints in Postman, then add screenshots here (replace the placeholders):
+
+1. All products XML: `https://muhammad-adra41-footballshop.pbp.cs.ui.ac.id/xml/`
+2. All products JSON: `https://muhammad-adra41-footballshop.pbp.cs.ui.ac.id/json/`
+3. Product by ID XML: `https://muhammad-adra41-footballshop.pbp.cs.ui.ac.id/xml/<id>/`
+4. Product by ID JSON: `https://muhammad-adra41-footballshop.pbp.cs.ui.ac.id/json/<id>/`
+
+Screenshots:
+
+![Postman XML by ID](image-1758021027457.png)
+
+![Postman XML (all)](image-1758021059639.png)
+
+![Postman JSON by ID](image-1758021073647.png)
+
+![Postman JSON (all)](image-1758021084252.png)
+
+If you're running locally, the base is `http://127.0.0.1:8000/`.

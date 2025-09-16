@@ -28,32 +28,9 @@
 		</div>
 	</header>
 
-	<section style="background:#fff;border:1px solid #ddd;border-radius:8px;padding:1rem;margin-bottom:1.25rem;">
-		<h2 style="margin-top:0; font-size:1.1rem;">Add a new product</h2>
-		<form method="post" style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;align-items:start;">
-			{% csrf_token %}
-			<div style="grid-column: span 1;">
-				<label>Name<br>{{ form.name }}</label>
-			</div>
-			<div>
-				<label>Price<br>{{ form.price }}</label>
-			</div>
-			<div style="grid-column: span 2;">
-				<label>Description<br>{{ form.description }}</label>
-			</div>
-			<div>
-				<label>Thumbnail URL<br>{{ form.thumbnail }}</label>
-			</div>
-			<div>
-				<label>Category<br>{{ form.category }}</label>
-			</div>
-			<div>
-				<label>Featured?<br>{{ form.is_featured }}</label>
-			</div>
-			<div style="grid-column: span 2;">
-				<button type="submit" style="background:#0a4;color:#fff;border:none;padding:.5rem .9rem;border-radius:6px;cursor:pointer;">Add Product</button>
-			</div>
-		</form>
+	<section style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+		<h2 style="margin:0; font-size:1.1rem;">Products</h2>
+		<a href="{% url 'main:add_product' %}" style="background:#0a4;color:#fff;text-decoration:none;padding:.5rem .9rem;border-radius:6px;">Add Product</a>
 	</section>
 
 	{% if products %}
@@ -68,6 +45,9 @@
 			<p class="price">IDR {{ p.price }}</p>
 			<p style="flex-grow:1; font-size:.85rem; line-height:1.2rem;">{{ p.description|truncatechars:120 }}</p>
 			<p style="margin:0; font-size:.7rem; color:#777;">Category: {{ p.get_category_display }}</p>
+			<div style="margin-top:.5rem; display:flex; gap:.5rem;">
+				<a href="{% url 'main:product_detail' p.id %}" style="background:#0078d4;color:#fff;text-decoration:none;padding:.35rem .7rem;border-radius:6px; font-size:.85rem;">Detail</a>
+			</div>
 		</div>
 		{% endfor %}
 	</section>
