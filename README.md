@@ -71,7 +71,7 @@ It was fine.
 
 ### Postman Endpoints to Capture
 
-Use these four GET endpoints in Postman, then add screenshots here (replace the placeholders):
+Use these four GET endpoints in Postman, then add screenshots here:
 
 1. All products XML: `https://muhammad-adra41-footballshop.pbp.cs.ui.ac.id/xml/`
 2. All products JSON: `https://muhammad-adra41-footballshop.pbp.cs.ui.ac.id/json/`
