@@ -33,6 +33,11 @@ DEBUG = True
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "muhammad-adra41-footballshop.pbp.cs.ui.ac.id"]
 
+# Allow CSRF from the deployed site (scheme is required)
+CSRF_TRUSTED_ORIGINS = [
+    "https://muhammad-adra41-footballshop.pbp.cs.ui.ac.id",
+]
+
 
 # Application definition
 
