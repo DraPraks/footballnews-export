@@ -89,3 +89,145 @@ Screenshots:
 ![Postman JSON (all)](image-1758021084252.png)
 
 If you're running locally, the base is `http://127.0.0.1:8000/`.
+---
+
+## Authentication Assignment 4
+
+This assignment adds user login, registration, and logout to the Django app, plus connects products to users and shows some user info.
+
+### What I Completed
+
+**User registration, login, and logout** - Used Django's built-in auth system  
+**Two test user accounts** - Made them with a script  
+**Linked products to users** - Added a foreign key in the Product model  
+**Show user details and last login cookie** - On the home page  
+**Answered the assignment questions** - See below  
+
+### Assignment Questions and Answers
+
+#### 1. What is Django's AuthenticationForm? Explain its advantages and disadvantages.
+
+**Answer:** Django's `AuthenticationForm` is a form that comes with Django for logging in users. It checks the username and password against the database.
+
+**Advantages:**
+- Works right out of the box with Django's auth system
+- Handles security stuff like password checking automatically
+- Saves time since you don't have to build it from scratch
+- Can be tweaked if needed
+- Shows errors and validates the form for you
+
+**Disadvantages:**
+- Only does basic username/password login
+- Need to add extra stuff for things like two-factor auth
+- Might give away too much info in error messages if you're not careful
+- Not as flexible as making your own custom login form
+
+#### 2. What is the difference between authentication and authorization? How does Django implement the two concepts?
+
+**Answer:** 
+
+**Authentication** is figuring out who you are (like logging in), while **Authorization** is deciding what you can do once you're logged in (like permissions).
+
+**Django Implementation:**
+
+**Authentication:**
+- Uses the `django.contrib.auth` stuff to check user identities
+- The `User` model holds login info
+- Backends verify your credentials (usually against the database)
+- Views and functions like `login()` keep track of who's logged in
+- Sessions remember you're logged in across pages
+
+**Authorization:**
+- Has a permission system with models and decorators like `@permission_required`
+- Groups let you bundle permissions
+- Decorators like `@login_required` block access if you're not logged in
+- Mixins for views to require permissions
+- Default permissions for adding, changing, deleting, or viewing stuff in models
+
+#### 3. What are the benefits and drawbacks of using sessions and cookies in storing the state of a web application?
+
+**Answer:**
+
+**Benefits:**
+- **Sessions:** Stored on the server, so safer from messing with on the client side; can hold lots of data; can clean up automatically
+- **Cookies:** Stored on the user's browser, saves server space; stick around even after closing the browser; help personalize things
+- **Together:** Keep track of state in HTTP, which doesn't remember stuff; let users stay logged in; make the site feel smoother
+
+**Drawbacks:**
+- **Sessions:** Use up server memory or storage; harder to scale if you have multiple servers; sessions can expire weirdly
+- **Cookies:** Limited to about 4KB; can be stolen via attacks like XSS or CSRF; privacy issues; users can turn them off
+- **General:** Managing sessions is a pain; security holes if not done right
+
+#### 4. In web development, is the usage of cookies secure by default, or is there any potential risk that we should be aware of? How does Django handle this problem?
+
+**Answer:**
+
+**Cookies are NOT secure by default.** Big risks include:
+
+**Potential Risks:**
+- **Sniffing:** If not using HTTPS, cookies can be intercepted
+- **XSS:** Bad scripts can grab your cookies
+- **CSRF:** Cookies get sent automatically, which attackers can exploit
+- **Session stealing:** If someone gets your session cookie, they can pretend to be you
+
+**Django's Security Measures:**
+- **HttpOnly flag:** Stops JavaScript from touching session cookies
+- **Secure flag:** Only sends cookies over HTTPS
+- **SameSite:** Helps stop CSRF by controlling when cookies are sent
+- **CSRF protection:** Built-in tokens and middleware
+- **Signed cookies:** Functions to sign cookies so they can't be tampered with
+- **Session stuff:** Rotates keys and lets you set timeouts
+
+#### 5. Explain how you implemented the checklist above step-by-step (not just following the tutorial).
+
+**Answer:**
+
+**Step 1: Set up Django Auth**
+- Added `'django.contrib.auth'` to `INSTALLED_APPS` in `settings.py`
+- Put `'django.contrib.auth.context_processors.auth'` in the template processors
+- Set up `LOGIN_URL`, `LOGIN_REDIRECT_URL`, and `LOGOUT_REDIRECT_URL`
+
+**Step 2: Connect Products to Users**
+- Changed the `Product` model to add `user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='products', null=True)`
+- In the `add_product` view, set `product.user = request.user`
+- Ran migration `0004_product_user.py` to update the database
+
+**Step 3: Registration**
+- Made a `RegistrationForm` based on `UserCreationForm` with an email field
+- Wrote a `register` view that saves the user and logs them in right away
+- Created `register.html` with the form and links to navigate
+
+**Step 4: Login and Logout**
+- Built `login_user` view using `AuthenticationForm` to check credentials
+- Made `logout_user` view to clear the session and send back to login
+- Designed `login.html` with error messages and validation
+
+**Step 5: Home Page with User Info**
+- Added a `home` view with `@login_required` to protect it
+- Showed `username` and `last_login` from the User model
+- Set a cookie: `response.set_cookie('last_login', last_login.strftime('%Y-%m-%d %H:%M:%S'))`
+- Made `home.html` to display user stats and their products
+
+**Step 6: URLs**
+- Updated `main/urls.py` with paths for home, register, login, logout
+- Rearranged to make auth flow the main thing
+- Made home the default page for logged-in users
+
+**Step 7: Templates**
+- Kept styling consistent across register, login, and home pages
+- Added nav links between pages
+- Put in error handling and feedback
+
+**Step 8: Dummy Data**
+- Wrote `create_dummies.py` using Django's user creation tools
+- Made two users (`footballer1`, `footballer2`) with emails
+- Added three products each with football shop stuff
+- Assigned products to the right users
+
+**Step 9: Testing**
+- Tested the whole flow: register, login, access control, logout
+- Checked that products are user-specific
+- Made sure cookies and sessions work
+- Verified redirects and restrictions
+
+I focused on using Django's built-in security features, good session handling, and safe cookies, while keeping the UI simple and easy to use.

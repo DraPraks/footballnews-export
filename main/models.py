@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.models import User
 
 class Product(models.Model):
     """Product model for Football Shop assignment (MVT demonstration)."""
@@ -16,6 +17,7 @@ class Product(models.Model):
     thumbnail = models.URLField(help_text="Image URL of the product")
     category = models.CharField(max_length=30, choices=CATEGORY_CHOICES)
     is_featured = models.BooleanField(default=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='products', null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
