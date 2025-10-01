@@ -122,3 +122,27 @@ def home(request):
         response.set_cookie('last_login', last_login.strftime('%Y-%m-%d %H:%M:%S'))
     
     return response
+
+@login_required
+def edit_product(request, id: int):
+    """Edit an existing Product."""
+    product = get_object_or_404(Product, pk=id, user=request.user)
+    if request.method == "POST":
+        form = ProductForm(request.POST, instance=product)
+        if form.is_valid():
+            form.save()
+            return redirect("main:show_main")
+    else:
+        form = ProductForm(instance=product)
+
+    return render(request, "product_form.html", {"form": form, "app_name": "Football Pro Shop", "is_edit": True})
+
+
+@login_required
+def delete_product(request, id: int):
+    """Delete a Product."""
+    product = get_object_or_404(Product, pk=id, user=request.user)
+    if request.method == "POST":
+        product.delete()
+        return redirect("main:show_main")
+    return render(request, "delete_confirm.html", {"product": product, "app_name": "Football Pro Shop"})

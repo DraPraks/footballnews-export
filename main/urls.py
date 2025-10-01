@@ -12,6 +12,8 @@ urlpatterns = [
     # Product URLs
     path('products/', views.show_main, name='show_main'),
     path('add/', views.add_product, name='add_product'),
+    path('edit/<int:id>/', views.edit_product, name='edit_product'),
+    path('delete/<int:id>/', views.delete_product, name='delete_product'),
     path('product/<int:id>/', views.product_detail, name='product_detail'),
     # Data endpoints
     path('xml/', views.show_xml, name='show_xml'),

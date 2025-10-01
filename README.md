@@ -231,3 +231,13 @@ This assignment adds user login, registration, and logout to the Django app, plu
 - Verified redirects and restrictions
 
 I focused on using Django's built-in security features, good session handling, and safe cookies, while keeping the UI simple and easy to use.
+
+---
+
+## Assignment 5: Web Design & Product Management
+
+- **Added edit/delete buttons** to each product card so users can manage their own stuff
+- **Made everything responsive** with Bootstrap - the navbar collapses on mobile, cards stack nicely, looks great on any screen
+- **Redesigned all pages** - login/register got fancy gradients, product forms are clean and centered, the product list shows cards with images and details
+- **Handled empty states** - when no products exist, shows a friendly message with an image
+- **Answered the questions** about CSS priority, responsive design, margins/borders/padding, flexbox/grid, and how I implemented everything step-by-step
