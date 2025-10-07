@@ -1,24 +1,70 @@
+import json
+from datetime import datetime
+
 from django.core import serializers
-from django.http import HttpResponse, Http404
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import login, authenticate, logout
+from django.http import Http404, HttpResponse, JsonResponse, QueryDict
+from django.shortcuts import get_object_or_404, redirect, render
+from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
-from datetime import datetime
+from django.urls import reverse
+from django.views.decorators.csrf import ensure_csrf_cookie
+from django.views.decorators.http import require_http_methods
+
 from .models import Product
 from .forms import ProductForm, RegistrationForm
 
 
+def _load_json(request):
+    if not request.body:
+        return {}
+    try:
+        return json.loads(request.body.decode("utf-8"))
+    except json.JSONDecodeError:
+        return None
+
+
+def _make_querydict(payload: dict | None) -> QueryDict:
+    qd = QueryDict(mutable=True)
+    if not payload:
+        return qd
+    for key, value in payload.items():
+        if value is None:
+            continue
+        if isinstance(value, bool):
+            if value:
+                qd.setlistdefault(key, []).append("on")
+            continue
+        if isinstance(value, (list, tuple)):
+            qd.setlist(key, ["" if item is None else str(item) for item in value])
+        else:
+            qd[key] = str(value)
+    return qd
+
+
+def _serialize_product(product: Product, user) -> dict:
+    owner_id = product.user_id
+    return {
+        "id": product.pk,
+        "name": product.name,
+        "price": product.price,
+        "description": product.description,
+        "thumbnail": product.thumbnail,
+        "category": product.category,
+        "category_display": product.get_category_display(),
+        "is_featured": product.is_featured,
+        "created_at": product.created_at.isoformat() if product.created_at else None,
+        "updated_at": product.updated_at.isoformat() if product.updated_at else None,
+        "owner": product.user.username if product.user_id else None,
+        "can_edit": bool(getattr(user, "is_authenticated", False) and owner_id == user.id),
+    }
+
+
+@ensure_csrf_cookie
 def show_main(request):
     """List products with navigation to add form and detail pages."""
-    products = Product.objects.all()
     context = {
         "app_name": "Football Pro Shop",
-        "npm": "2406453530",
-        "name": "Muhammad Adra Prakoso",
-        "class": "PBP KKI",
-        "product_count": products.count(),
-        "products": products,
     }
     return render(request, "main.html", context)
 
@@ -73,6 +119,7 @@ def show_json_by_id(request, id: int):
     json_data = serializers.serialize("json", data)
     return HttpResponse(json_data, content_type="application/json")
 
+@ensure_csrf_cookie
 def register(request):
     if request.method == 'POST':
         form = RegistrationForm(request.POST)
@@ -84,6 +131,7 @@ def register(request):
         form = RegistrationForm()
     return render(request, 'register.html', {'form': form})
 
+@ensure_csrf_cookie
 def login_user(request):
     if request.method == 'POST':
         form = AuthenticationForm(data=request.POST)
@@ -146,3 +194,101 @@ def delete_product(request, id: int):
         product.delete()
         return redirect("main:show_main")
     return render(request, "delete_confirm.html", {"product": product, "app_name": "Football Pro Shop"})
+
+# AJAX helpers for CRUD operations
+
+@require_http_methods(["GET", "POST"])
+def api_products(request):
+    """Return product list or create a new product via AJAX."""
+    if request.method == "GET":
+        products = Product.objects.all()
+        data = [_serialize_product(product, request.user) for product in products]
+        return JsonResponse({"products": data})
+
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "Authentication required"}, status=401)
+
+    payload = _load_json(request) if request.content_type == "application/json" else request.POST.dict()
+    if payload is None:
+        return JsonResponse({"error": "Invalid JSON payload"}, status=400)
+
+    form = ProductForm(_make_querydict(payload))
+    if not form.is_valid():
+        return JsonResponse({"errors": form.errors}, status=400)
+
+    product = form.save(commit=False)
+    product.user = request.user
+    product.save()
+    return JsonResponse({"product": _serialize_product(product, request.user)}, status=201)
+
+
+@require_http_methods(["GET", "PUT", "PATCH", "DELETE"])
+def api_product_detail(request, id: int):
+    product = get_object_or_404(Product, pk=id)
+
+    if request.method == "GET":
+        return JsonResponse({"product": _serialize_product(product, request.user)})
+
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "Authentication required"}, status=401)
+
+    if product.user_id != request.user.id:
+        return JsonResponse({"error": "You do not have permission for this product."}, status=403)
+
+    if request.method in {"PUT", "PATCH"}:
+        payload = _load_json(request)
+        if payload is None:
+            return JsonResponse({"error": "Invalid JSON payload"}, status=400)
+
+        form = ProductForm(_make_querydict(payload), instance=product)
+        if not form.is_valid():
+            return JsonResponse({"errors": form.errors}, status=400)
+
+        product = form.save()
+        return JsonResponse({"product": _serialize_product(product, request.user)})
+
+    product.delete()
+    return JsonResponse({"deleted": True, "id": id}, status=200)
+
+
+@require_http_methods(["POST"])
+def api_login(request):
+    payload = _load_json(request) if request.content_type == "application/json" else request.POST.dict()
+    if payload is None:
+        return JsonResponse({"error": "Invalid JSON payload"}, status=400)
+
+    form = AuthenticationForm(request, data=payload)
+    if not form.is_valid():
+        return JsonResponse({"errors": form.errors}, status=400)
+
+    user = form.get_user()
+    login(request, user)
+    return JsonResponse({
+        "success": True,
+        "redirect": reverse("main:home"),
+    })
+
+
+@require_http_methods(["POST"])
+def api_register(request):
+    payload = _load_json(request) if request.content_type == "application/json" else request.POST.dict()
+    if payload is None:
+        return JsonResponse({"error": "Invalid JSON payload"}, status=400)
+
+    form = RegistrationForm(_make_querydict(payload))
+    if not form.is_valid():
+        return JsonResponse({"errors": form.errors}, status=400)
+
+    user = form.save()
+    login(request, user)
+    return JsonResponse({
+        "success": True,
+        "redirect": reverse("main:home"),
+    }, status=201)
+
+
+@login_required
+@require_http_methods(["POST"])
+def api_logout(request):
+    logout(request)
+    return JsonResponse({"success": True, "redirect": reverse("main:login")})

@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ app_name }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="{% static 'main/css/toasts.css' %}" rel="stylesheet">
     <style>
         .featured-card {
             border: 2px solid #ffc107 !important;
@@ -39,11 +41,6 @@
                     <li class="nav-item">
                         <a class="nav-link active" href="{% url 'main:show_main' %}">Products</a>
                     </li>
-                    {% if user.is_authenticated %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'main:add_product' %}">Add Product</a>
-                    </li>
-                    {% endif %}
                 </ul>
                 <ul class="navbar-nav">
                     {% if user.is_authenticated %}
@@ -51,7 +48,7 @@
                         <span class="navbar-text me-3">Hello, {{ user.username }}!</span>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'main:logout' %}">Logout</a>
+                        <button type="button" class="nav-link btn btn-link px-0" data-logout-button>Logout</button>
                     </li>
                     {% else %}
                     <li class="nav-item">
@@ -67,63 +64,179 @@
     </nav>
 
     <div class="container mt-4">
-        <div class="row">
+        <div class="row mb-4">
             <div class="col">
-                <h1 class="mb-3">{{ app_name }}</h1>
-                <div class="mb-3">
-                    <span class="badge bg-secondary me-2">NPM: {{ npm }}</span>
-                    <span class="badge bg-secondary me-2">Name: {{ name }}</span>
-                    <span class="badge bg-secondary me-2">Class: {{ class }}</span>
-                    <span class="badge bg-info">Total Products: {{ product_count }}</span>
-                </div>
+                <h1 class="mb-1">{{ app_name }}</h1>
+                <p class="text-muted">Manage your football inventory seamlessly with live updates.</p>
             </div>
         </div>
 
         <div class="row mb-4">
-            <div class="col d-flex justify-content-between align-items-center">
-                <h2 class="mb-0">Products</h2>
+            <div class="col d-flex flex-wrap gap-2 align-items-center">
+                <h2 class="mb-0 me-auto">Products</h2>
+                <button type="button" class="btn btn-outline-secondary" id="refresh-products-btn">
+                    Refresh
+                </button>
                 {% if user.is_authenticated %}
-                <a href="{% url 'main:add_product' %}" class="btn btn-success">Add New Product</a>
+                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#productCreateModal">
+                    New Product
+                </button>
                 {% endif %}
             </div>
         </div>
 
-        {% if products %}
-        <div class="row">
-            {% for p in products %}
-            <div class="col-lg-4 col-md-6 mb-4">
-                <div class="card h-100 {% if p.is_featured %}featured-card{% endif %}">
-                    <img src="{{ p.thumbnail }}" class="card-img-top product-img" alt="{{ p.name }}" onerror="this.src='https://via.placeholder.com/300x200?text=No+Image';">
-                    <div class="card-body d-flex flex-column">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <h5 class="card-title mb-0">{{ p.name }}</h5>
-                            {% if p.is_featured %}
-                            <span class="badge bg-warning text-dark">Featured</span>
-                            {% endif %}
+        <div id="product-state-loading" class="text-center py-5 d-none">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-3 mb-0 text-muted">Fetching products, please wait.</p>
+        </div>
+
+        <div id="product-state-empty" class="no-products d-none">
+            <img src="https://via.placeholder.com/400x300?text=No+Products+Yet" alt="No products" class="img-fluid">
+            <h3 class="text-muted">No products registered yet</h3>
+            <p class="text-muted">Use the New Product button to add your first item.</p>
+        </div>
+
+        <div id="product-state-error" class="alert alert-danger d-none" role="alert">
+            Unable to load products right now. Please try refreshing or check your connection.
+        </div>
+
+        <div id="product-grid" class="row g-4"></div>
+
+        {% if user.is_authenticated %}
+        <!-- Create Product Modal -->
+        <div class="modal fade" id="productCreateModal" tabindex="-1" aria-labelledby="productCreateModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                <form id="product-create-form" class="modal-content needs-validation" novalidate>
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="productCreateModalLabel">Create New Product</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="create-name" class="form-label">Name</label>
+                                <input type="text" class="form-control" id="create-name" name="name" required minlength="3" placeholder="e.g., Pro Jersey 2025">
+                                <div class="invalid-feedback d-none" data-field-error="name"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="create-price" class="form-label">Price (IDR)</label>
+                                <input type="number" class="form-control" id="create-price" name="price" min="0" step="1000" required placeholder="500000">
+                                <div class="invalid-feedback d-none" data-field-error="price"></div>
+                            </div>
+                            <div class="col-12">
+                                <label for="create-description" class="form-label">Description</label>
+                                <textarea class="form-control" id="create-description" name="description" rows="3" required placeholder="Describe the product"></textarea>
+                                <div class="invalid-feedback d-none" data-field-error="description"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="create-thumbnail" class="form-label">Thumbnail URL</label>
+                                <input type="url" class="form-control" id="create-thumbnail" name="thumbnail" required placeholder="https://...">
+                                <div class="invalid-feedback d-none" data-field-error="thumbnail"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="create-category" class="form-label">Category</label>
+                                <select class="form-select" id="create-category" name="category" required>
+                                    <option value="" selected disabled>Choose category</option>
+                                    <option value="jersey">Jersey</option>
+                                    <option value="boots">Boots</option>
+                                    <option value="ball">Ball</option>
+                                    <option value="accessory">Accessory</option>
+                                    <option value="training">Training Gear</option>
+                                </select>
+                                <div class="invalid-feedback d-none" data-field-error="category"></div>
+                            </div>
+                            <div class="col-12 form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch" id="create-featured" name="is_featured">
+                                <label class="form-check-label" for="create-featured">Mark as featured product</label>
+                            </div>
                         </div>
-                        <h6 class="card-subtitle mb-2 text-success">IDR {{ p.price|floatformat:0 }}</h6>
-                        <p class="card-text flex-grow-1">{{ p.description|truncatechars:100 }}</p>
-                        <p class="card-text"><small class="text-muted">Category: {{ p.get_category_display }}</small></p>
-                        <div class="mt-auto">
-                            <a href="{% url 'main:product_detail' p.id %}" class="btn btn-primary btn-sm me-2">View Details</a>
-                            {% if user.is_authenticated and p.user == user %}
-                            <a href="{% url 'main:edit_product' p.id %}" class="btn btn-warning btn-sm me-2">Edit</a>
-                            <a href="{% url 'main:delete_product' p.id %}" class="btn btn-danger btn-sm">Delete</a>
-                            {% endif %}
+                    </div>
+                    <div class="modal-footer">
+                        <div class="text-danger small me-auto d-none" data-form-error></div>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-success" data-submit-btn>Save Product</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Edit Product Modal -->
+        <div class="modal fade" id="productEditModal" tabindex="-1" aria-labelledby="productEditModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                <form id="product-edit-form" class="modal-content needs-validation" novalidate>
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="productEditModalLabel">Update Product</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="edit-product-id" name="id">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="edit-name" class="form-label">Name</label>
+                                <input type="text" class="form-control" id="edit-name" name="name" required minlength="3">
+                                <div class="invalid-feedback d-none" data-field-error="name"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="edit-price" class="form-label">Price (IDR)</label>
+                                <input type="number" class="form-control" id="edit-price" name="price" min="0" step="1000" required>
+                                <div class="invalid-feedback d-none" data-field-error="price"></div>
+                            </div>
+                            <div class="col-12">
+                                <label for="edit-description" class="form-label">Description</label>
+                                <textarea class="form-control" id="edit-description" name="description" rows="3" required></textarea>
+                                <div class="invalid-feedback d-none" data-field-error="description"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="edit-thumbnail" class="form-label">Thumbnail URL</label>
+                                <input type="url" class="form-control" id="edit-thumbnail" name="thumbnail" required>
+                                <div class="invalid-feedback d-none" data-field-error="thumbnail"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="edit-category" class="form-label">Category</label>
+                                <select class="form-select" id="edit-category" name="category" required>
+                                    <option value="jersey">Jersey</option>
+                                    <option value="boots">Boots</option>
+                                    <option value="ball">Ball</option>
+                                    <option value="accessory">Accessory</option>
+                                    <option value="training">Training Gear</option>
+                                </select>
+                                <div class="invalid-feedback d-none" data-field-error="category"></div>
+                            </div>
+                            <div class="col-12 form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch" id="edit-featured" name="is_featured">
+                                <label class="form-check-label" for="edit-featured">Mark as featured product</label>
+                            </div>
                         </div>
+                    </div>
+                    <div class="modal-footer">
+                        <div class="text-danger small me-auto d-none" data-form-error></div>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-warning" data-submit-btn>Update Product</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Delete confirmation modal -->
+        <div class="modal fade" id="productDeleteModal" tabindex="-1" aria-labelledby="productDeleteModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="productDeleteModalLabel">Delete Product</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="mb-1">You're about to delete <strong id="delete-product-name">this product</strong>.</p>
+                        <p class="mb-0 text-muted">This action cannot be undone.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-danger" id="confirm-delete-btn">Delete</button>
                     </div>
                 </div>
             </div>
-            {% endfor %}
-        </div>
-        {% else %}
-        <div class="no-products">
-            <img src="https://via.placeholder.com/400x300?text=No+Products+Yet" alt="No products" class="img-fluid">
-            <h3 class="text-muted">No products registered yet</h3>
-            <p class="text-muted">Start by adding your first product!</p>
-            {% if user.is_authenticated %}
-            <a href="{% url 'main:add_product' %}" class="btn btn-primary">Add Product</a>
-            {% endif %}
         </div>
         {% endif %}
 
@@ -133,7 +246,10 @@
             </div>
         </footer>
     </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <div id="toast-container" class="toast-stack" aria-live="polite" aria-atomic="true"></div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+    <script src="{% static 'main/js/toasts.js' %}" defer></script>
+    <script src="{% static 'main/js/products.js' %}" defer></script>
+    <script src="{% static 'main/js/auth.js' %}" defer></script>
 </body>
 </html>

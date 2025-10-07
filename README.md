@@ -241,3 +241,29 @@ I focused on using Django's built-in security features, good session handling, a
 - **Redesigned all pages** - login/register got fancy gradients, product forms are clean and centered, the product list shows cards with images and details
 - **Handled empty states** - when no products exist, shows a friendly message with an image
 - **Answered the questions** about CSS priority, responsive design, margins/borders/padding, flexbox/grid, and how I implemented everything step-by-step
+
+## Assignment 6 – AJAX Enhancements
+
+### What I implemented
+- Replaced the server-rendered product grid with a single-page shell that fetches data from `/api/products/` and renders it client-side (`main/static/main/js/products.js`).
+- Added REST-style JSON endpoints for product CRUD and authentication (`main/views.py`) and wired them in `main/urls.py`.
+- Crafted Bootstrap modals for create/update/delete, complete with inline validation, loading/error/empty states, and a refresh control (`main/templates/main.html`).
+- Built a custom toast system (`main/static/main/js/toasts.js` + `main/static/main/css/toasts.css`) to surface success/error feedback for products and auth.
+- Converted login, register, and logout into fully asynchronous flows with CSRF protection and inline error mapping (`main/static/main/js/auth.js`).
+
+### Required questions
+
+#### 1. What is the difference between synchronous request and asynchronous request?
+Synchronous requests block the caller until the server replies, so the browser cannot respond to user input and the UI appears frozen. Asynchronous requests run in the background; JavaScript sends the request, keeps the event loop free, and processes the response later via callbacks or promises. In this project the old synchronous form submissions caused full page reloads, whereas the new `fetch` calls update just the affected components, keeping the rest of the page interactive.
+
+#### 2. How does AJAX work in Django (request–response flow)?
+The browser issues an XMLHttpRequest/`fetch` with JSON payloads and a CSRF header. Django routes the request through `urls.py` to the API view, where I validate forms, serialize `Product` objects, and return a `JsonResponse`. The promise resolves in the frontend, which inspects the JSON (success/errors) and mutates the DOM—e.g., re-rendering the product grid or showing validation feedback—without a full template render.
+
+#### 3. What are the advantages of using AJAX compared to regular rendering in Django?
+AJAX avoids layout shifts and template re-renders, so the perceived speed is much higher. We transfer only lightweight JSON instead of whole HTML pages, reduce server template work, and can compose state-dependent UI logic (loading/empty/error) on the client. It also lets multiple UI sections update independently; for example, the product list refreshes after mutations while the modal stays open just long enough to show a toast.
+
+#### 4. How do you ensure security when using AJAX for Login and Register features in Django?
+Every POST/PUT/DELETE request carries an `X-CSRFToken` header sourced from Django’s cookie, and all endpoints call `@login_required` or verify ownership before mutating data. Password handling still goes through Django’s `AuthenticationForm` and `UserCreationForm`, so hashing and validation stay server-side. The views return minimal error detail, use HTTPS-friendly settings (`CSRF_TRUSTED_ORIGINS`), and log users out by invalidating the session server-side—so even though the frontend is asynchronous, authentication state is controlled by Django’s secure session middleware.
+
+#### 5. How does AJAX affect user experience (UX) on websites?
+Users get immediate visual feedback: the loading spinner appears while data is in flight, empty/error states explain what happened, and bespoke toasts confirm each action. Because the page never fully reloads, scroll position, focus, and modal state persist, which makes the interaction feel fluid and app-like. Combined with the refresh button and real-time grid updates, the UX now feels responsive and trustworthy.

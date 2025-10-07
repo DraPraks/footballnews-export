@@ -20,4 +20,10 @@ urlpatterns = [
     path('json/', views.show_json, name='show_json'),
     path('xml/<int:id>/', views.show_xml_by_id, name='show_xml_by_id'),
     path('json/<int:id>/', views.show_json_by_id, name='show_json_by_id'),
+    # AJAX API endpoints
+    path('api/products/', views.api_products, name='api_products'),
+    path('api/products/<int:id>/', views.api_product_detail, name='api_product_detail'),
+    path('api/login/', views.api_login, name='api_login'),
+    path('api/register/', views.api_register, name='api_register'),
+    path('api/logout/', views.api_logout, name='api_logout'),
 ]

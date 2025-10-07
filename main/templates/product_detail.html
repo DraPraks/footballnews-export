@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ product.name }} - {{ app_name }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="{% static 'main/css/toasts.css' %}" rel="stylesheet">
     <style>
         .product-image {
             max-height: 400px;
@@ -37,11 +39,6 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'main:show_main' %}">Products</a>
                     </li>
-                    {% if user.is_authenticated %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'main:add_product' %}">Add Product</a>
-                    </li>
-                    {% endif %}
                 </ul>
                 <ul class="navbar-nav">
                     {% if user.is_authenticated %}
@@ -49,7 +46,7 @@
                         <span class="navbar-text me-3">Hello, {{ user.username }}!</span>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'main:logout' %}">Logout</a>
+                        <button type="button" class="nav-link btn btn-link px-0" data-logout-button>Logout</button>
                     </li>
                     {% else %}
                     <li class="nav-item">
@@ -90,8 +87,7 @@
                         <div class="mt-4">
                             <a href="{% url 'main:show_main' %}" class="btn btn-outline-secondary me-2">← Back to Products</a>
                             {% if user.is_authenticated and product.user == user %}
-                            <a href="{% url 'main:edit_product' product.id %}" class="btn btn-warning me-2">Edit Product</a>
-                            <a href="{% url 'main:delete_product' product.id %}" class="btn btn-danger">Delete Product</a>
+                            <a href="{% url 'main:show_main' %}#product-grid" class="btn btn-warning">Manage in Dashboard</a>
                             {% endif %}
                         </div>
                     </div>
@@ -99,7 +95,9 @@
             </div>
         </div>
     </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <div id="toast-container" class="toast-stack" aria-live="polite" aria-atomic="true"></div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+    <script src="{% static 'main/js/toasts.js' %}" defer></script>
+    <script src="{% static 'main/js/auth.js' %}" defer></script>
 </body>
 </html>
