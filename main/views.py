@@ -8,8 +8,10 @@ from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.urls import reverse
-from django.views.decorators.csrf import ensure_csrf_cookie
+from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
 from django.views.decorators.http import require_http_methods
+from django.utils.html import strip_tags
+import requests
 
 from .models import Product
 from .forms import ProductForm, RegistrationForm
@@ -99,7 +101,11 @@ def show_xml(request):
 
 
 def show_json(request):
-    data = Product.objects.all()
+    # Filter products by authenticated user if requested
+    if request.user.is_authenticated and request.GET.get('user_only') == 'true':
+        data = Product.objects.filter(user=request.user)
+    else:
+        data = Product.objects.all()
     json_data = serializers.serialize("json", data)
     return HttpResponse(json_data, content_type="application/json")
 
@@ -292,3 +298,64 @@ def api_register(request):
 def api_logout(request):
     logout(request)
     return JsonResponse({"success": True, "redirect": reverse("main:login")})
+
+
+def proxy_image(request):
+    """Proxy endpoint to handle CORS-safe image loading from external sources."""
+    image_url = request.GET.get('url')
+    if not image_url:
+        return HttpResponse('No URL provided', status=400)
+    
+    try:
+        response = requests.get(image_url, timeout=10)
+        response.raise_for_status()
+        
+        # Return the image with proper content type
+        return HttpResponse(
+            response.content,
+            content_type=response.headers.get('Content-Type', 'image/jpeg')
+        )
+    except requests.RequestException as e:
+        return HttpResponse(f'Error fetching image: {str(e)}', status=500)
+
+
+@csrf_exempt
+def create_product_flutter(request):
+    """Handle product creation from Flutter with JSON payload."""
+    if request.method == 'POST':
+        if not request.user.is_authenticated:
+            return JsonResponse({"status": "error", "message": "Authentication required"}, status=401)
+        
+        data = json.loads(request.body)
+        title = strip_tags(data.get("name", ""))
+        description = strip_tags(data.get("description", ""))
+        price = data.get("price", 0)
+        thumbnail = data.get("thumbnail", "")
+        category = data.get("category", "")
+        is_featured = data.get("is_featured", False)
+        
+        try:
+            product = Product.objects.create(
+                name=title,
+                description=description,
+                price=price,
+                thumbnail=thumbnail,
+                category=category,
+                is_featured=is_featured,
+                user=request.user
+            )
+            return JsonResponse({
+                "status": "success",
+                "message": "Product created successfully!",
+                "product_id": product.id
+            }, status=200)
+        except Exception as e:
+            return JsonResponse({
+                "status": "error",
+                "message": f"Failed to create product: {str(e)}"
+            }, status=400)
+    else:
+        return JsonResponse({
+            "status": "error",
+            "message": "Invalid request method."
+        }, status=405)
